@@ -14,7 +14,7 @@ export const userRouter = new Hono<{
 
 
 //POST route for signing up 
-userRouter.post('/signup/', async (c) => {
+userRouter.post('/signup', async (c) => {
 
     //Making prisma client connection
     const prisma = new PrismaClient({
@@ -48,34 +48,14 @@ userRouter.post('/signup/', async (c) => {
         c.env.JWT_SECRET,
         'HS256');
 
-
-
-    c.header("Set-Authorization", `${token}; HttpOnly; Secure; SameSite=Strict; Path=/`);
-
-
     //user created successfully    
     c.status(201);
-    return c.newResponse(
-        JSON.stringify({
-            name: user.name,
-            email: user.email,
-            id: user.id,
-            token,
-        }),
-        {
-            status: 201,
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `${token}`,
-                "Access-Control-Expose-Headers": "Authorization", // Allow clients to access header
-            },
-        }
-    );
+    return c.newResponse(token, { status: 201 })
 });
 
 
 // POST route to signin
-userRouter.post('/signin/', async (c) => {
+userRouter.post('/signin', async (c) => {
 
     //Making prisma client connection
     const prisma = new PrismaClient({
@@ -104,20 +84,7 @@ userRouter.post('/signin/', async (c) => {
     const token = await sign({ id: user.id }, c.env.JWT_SECRET);
 
 
-    c.header("Set-Authorization", `${token}; HttpOnly; Secure; SameSite=Strict; Path=/`);
-
-
-    // ✅ Correct way to set headers
-    return c.newResponse(
-        JSON.stringify({ token }),
-        {
-            status: 200,
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `${token}`,
-                "Access-Control-Expose-Headers": "Authorization",
-            },
-        }
-    );
+    // Correct way to set headers
+    return c.newResponse(token, { status: 200 });
 
 });
