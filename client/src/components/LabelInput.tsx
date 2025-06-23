@@ -4,17 +4,26 @@ type Props = {
   label: string;
   placeholder: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  required?: boolean;
+  error?: string;
 };
 
-const LabelInput = ({ label, placeholder, onChange }: Props) => {
+const LabelInput = ({ label, placeholder, onChange, required = false, error = "" }: Props) => {
   return (
     <div className="flex flex-col mt-1">
-      <label className="text-lg font-semibold"> {label}</label>
+      <label htmlFor={label} className="text-lg font-semibold">
+        {label}
+      </label>
       <input
+        name={label}
         onChange={onChange}
-        placeholder={`${placeholder}`}
-        className=" focus:outline-2 border border-slate-500 rounded-lg p-1"
+        placeholder={placeholder}
+        className={`border rounded-lg p-2 focus:outline-none ${
+          error ? "border-red-500" : "border-slate-500"
+        }`}
+        required={required}
       />
+      {error && <span className="text-sm text-red-500 mt-1">{error}</span>}
     </div>
   );
 };

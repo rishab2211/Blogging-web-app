@@ -8,73 +8,105 @@ import axios from "axios";
 import { BACKEND_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 
-type Props = {};
-
-const Signin = (props: Props) => {
+const Signin = () => {
   const [postInputs, setPostInputs] = useState({
     email: "",
     password: "",
   });
+
+  const [errors, setErrors] = useState({
+    email: "",
+    password: "",
+  });
+
   const navigate = useNavigate();
 
-  const sendRequest = async () => {
+  const validate = () => {
+    const newErrors = { email: "", password: "" };
+    let isValid = true;
+
+    if (!postInputs.email.trim()) {
+      newErrors.email = "Email is required";
+      isValid = false;
+    }
+
+    if (!postInputs.password.trim()) {
+      newErrors.password = "Password is required";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const sendRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
     try {
       const response = await axios.post(
         `${BACKEND_URL}/api/v1/user/signin`,
         postInputs
       );
-      console.log("RESPONSE : ", response);
 
-      const jwt = await response.data;
-      console.log("JWT : ", jwt);
-
+      const jwt = response.data;
       localStorage.setItem("token", jwt);
       navigate("/blogs");
     } catch (err: any) {
-      //alert the use that the request has failed
-      console.log("ERROR OCCURED :", err.message);
+      console.log("ERROR OCCURRED:", err.message);
+      // You could also set error messages here
     }
   };
+
   return (
-    <div className="h-screen grid  sm:grid-cols-2 ">
-      <div className=" w-full flex flex-col justify-center items-center">
-        <div className="w-[300px] md:w-[350fpx]  flex flex-col gap-4">
-          <Head text="Enter details to continue" />
-          <div>
-            <LabelInput
-              label="Email"
-              placeholder="Enter your email"
-              onChange={(e) => {
-                setPostInputs((c) => ({
-                  ...c,
-                  email: e.target.value,
-                }));
-              }}
+    <div className="h-screen grid sm:grid-cols-2">
+      <div className="w-full flex flex-col justify-center items-center">
+        <form
+          onSubmit={sendRequest}
+          className="w-full flex flex-col justify-center items-center"
+        >
+          <div className="w-[300px] md:w-[350px] flex flex-col gap-4">
+            <Head text="Enter details to continue" />
+            <div>
+              <LabelInput
+                label="Email"
+                placeholder="Enter your email"
+                required
+                onChange={(e) =>
+                  setPostInputs((c) => ({
+                    ...c,
+                    email: e.target.value,
+                  }))
+                }
+                error={errors.email}
+              />
+              <LabelInput
+                label="Password"
+                placeholder="Enter the password"
+                required
+                onChange={(e) =>
+                  setPostInputs((c) => ({
+                    ...c,
+                    password: e.target.value,
+                  }))
+                }
+                error={errors.password}
+              />
+            </div>
+            <Alternate
+              text="Don't have an account?"
+              alternate="signup"
+              alternateText="Signup"
             />
-            <LabelInput
-              label="Password"
-              placeholder="Enter the password"
-              onChange={(e) => {
-                setPostInputs((c) => ({
-                  ...c,
-                  password: e.target.value,
-                }));
-              }}
-            />
+            <div className="flex justify-center">
+              <Button type="submit" text="Login" onClick={sendRequest} />
+            </div>
           </div>
-          <Alternate
-            text="Don't have an account?"
-            alternate="signup"
-            alternateText="Signup"
-          />
-          <div className="flex justify-center">
-            <Button text="Login" onClick={sendRequest} />
-          </div>
-        </div>
+        </form>
       </div>
 
       <Quote
-        text="The customer support i recieved was exceptional. The support team went above and beyond to address my concerns"
+        text="The customer support I received was exceptional. The support team went above and beyond to address my concerns."
         author="Juliens Winfield"
       />
     </div>
