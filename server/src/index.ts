@@ -3,6 +3,7 @@ import { userRouter } from './routes/user';
 import { blogRouter } from './routes/blog';
 import { cors } from 'hono/cors'
 
+// hono app initialization
 const app = new Hono<{
   Bindings: {
     PRISMA_DB_URL: string,
@@ -10,17 +11,19 @@ const app = new Hono<{
   }
 }>();
 
+// cors middleware to allow access from all origins
 app.use("/*",cors())
+
+// handling user requests with userRouter
 app.route("/api/v1/user",userRouter);
+
+// handling blogs requests with blogRouter
 app.route("/api/v1/blog",blogRouter);
 
-//GET route for home page
+// home page
 app.get("/", async (c) => {
   return c.text("hello to backend")
 })
-
-//Middleware implementation
-
 
 
 

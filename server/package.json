@@ -7,6 +7,7 @@
   "dependencies": {
     "@prisma/client": "^6.3.1",
     "@prisma/extension-accelerate": "^1.2.2",
+    "@rishab2211/blogging-app-common": "^1.0.1",
     "hono": "^4.7.1",
     "prisma": "^6.3.1"
   },
