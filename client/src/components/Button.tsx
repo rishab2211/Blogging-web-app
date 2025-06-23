@@ -1,4 +1,4 @@
-import { HTMLInputTypeAttribute, MouseEventHandler } from "react";
+import { MouseEventHandler } from "react";
 
 type Props = {
   text: string;

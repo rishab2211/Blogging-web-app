@@ -6,15 +6,24 @@ type Props = {
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   required?: boolean;
   error?: string;
+  type?: string;
 };
 
-const LabelInput = ({ label, placeholder, onChange, required = false, error = "" }: Props) => {
+const LabelInput = ({
+  type,
+  label,
+  placeholder,
+  onChange,
+  required = false,
+  error = "",
+}: Props) => {
   return (
     <div className="flex flex-col mt-1">
       <label htmlFor={label} className="text-lg font-semibold">
         {label}
       </label>
       <input
+        type={type}
         name={label}
         onChange={onChange}
         placeholder={placeholder}

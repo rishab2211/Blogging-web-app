@@ -54,7 +54,7 @@ const Signin = () => {
       navigate("/blogs");
     } catch (err: any) {
       console.log("ERROR OCCURRED:", err.message);
-      // You could also set error messages here
+      
     }
   };
 
@@ -84,6 +84,7 @@ const Signin = () => {
                 label="Password"
                 placeholder="Enter the password"
                 required
+                type="password"
                 onChange={(e) =>
                   setPostInputs((c) => ({
                     ...c,
