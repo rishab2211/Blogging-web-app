@@ -1,34 +1,60 @@
 import { BellIcon, MoreHorizontal } from "lucide-react";
-import { useState } from "react";
-import { cn } from "../lib/utils";
+
 import Avatar from "./avatar";
+import WriteButton from "./write-button";
+import { useNavigate } from "react-router-dom";
 
-type Props = {};
+type Props = {
+  text?: string;
+  status?: string;
+  showMoreBtn?: boolean;
+  showNotificationBtn?: boolean;
+  showWriteBtn?: boolean;
+};
 
-const WriteBlogNavbar = () => {
-  const [isPublish, setIsPublish] = useState(false);
+const WriteBlogNavbar = ({
+  text,
+  status,
+  showMoreBtn,
+  showNotificationBtn,
+  showWriteBtn,
+}: Props) => {
+  const navigate = useNavigate();
 
   return (
     <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="flex items-center justify-between px-6 py-3">
         <div className="flex gap-3 items-center">
-          <img src="/blog.svg" alt="logo" className="h-8" />
-          <span className="text-gray-600 italic">Draft in kirags</span>
-          <span className="text-gray-500 font-medium">Saved</span>
+          <img
+            src="/blog.svg"
+            alt="logo"
+            className="h-8"
+            onClick={() => navigate("/")}
+          />
+          {text && <span className="text-gray-600 italic">{text}</span>}
+          {status && (
+            <span className="text-gray-500 font-medium">{status}</span>
+          )}
         </div>
 
         <div className="flex gap-3 items-center">
-          <button
-            onClick={() => setIsPublish(!isPublish)}
-            className={cn(
-              isPublish ? "bg-red-500" : "bg-green-500",
-              "px-4 py-2 rounded-md text-white font-medium transition"
-            )}
-          >
-            {isPublish ? "Unpublish" : "Publish"}
-          </button>
-          <MoreHorizontal className="text-gray-600 cursor-pointer" />
-          <BellIcon className="text-gray-600 cursor-pointer" />
+          {showWriteBtn && (
+            <div>
+              <WriteButton />
+            </div>
+          )}
+          {showMoreBtn && (
+            <MoreHorizontal
+              aria-label="More options"
+              className="text-gray-600 cursor-pointer"
+            />
+          )}
+          {showNotificationBtn && (
+            <BellIcon
+              aria-label="Notifications"
+              className="text-gray-600 cursor-pointer"
+            />
+          )}
           <Avatar />
         </div>
       </div>

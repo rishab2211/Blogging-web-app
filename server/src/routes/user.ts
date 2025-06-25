@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
-import { sign } from "hono/jwt";
-import {SigninInput} from "@rishab2211/blogging-app-common"
+import { sign, verify } from "hono/jwt";
+import { getPrisma } from "../utils/helper";
 
 export const userRouter = new Hono<{
 
@@ -88,4 +88,52 @@ userRouter.post('/signin', async (c) => {
     // Correct way to set headers
     return c.newResponse(token, { status: 200 });
 
+});
+
+
+userRouter.get("/me", async (c) => {
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    c.status(401);
+    return c.json({ message: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  console.log("TOKEN : ",token);
+  
+
+  try {
+    const decoded = await verify(token, c.env.JWT_SECRET);
+    // const userId:string = decoded.userId as string;
+
+    const userId: string = decoded.id as string;
+
+
+    console.log("USER ID: ",userId);
+    
+
+    const prisma = getPrisma(c.env.PRISMA_DB_URL);
+
+    const user = await prisma.user.findUnique({
+      where: { 
+        id : userId
+       },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (!user) {
+      c.status(404);
+      return c.json({ message: "User not found" });
+    }
+
+    return c.json(user);
+  } catch (err) {
+    console.error("Token verification failed:", err);
+    c.status(401);
+    return c.json({ message: "Invalid token" });
+  }
 });

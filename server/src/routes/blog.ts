@@ -21,7 +21,7 @@ blogRouter.use("/*", async (c, next) => {
     // get auth header
     const authHeader = c.req.header("Authorization") || "";
 
-     // Extract token from "Bearer <token>"
+    // Extract token from "Bearer <token>"
     const token = authHeader.replace("Bearer ", "").trim();
 
     // verify the auth header and set it
@@ -77,10 +77,113 @@ blogRouter.post('/', async (c) => {
 });
 
 
+
+// this route has to be above the route fetching post by id, else it will not work
+blogRouter.get("/get-all", async (c) => {
+  try {
+    const prisma = getPrisma(c.env.PRISMA_DB_URL);
+
+    const pageParam = c.req.query("page");
+    const limit = 10;
+    const page = Math.max(parseInt(pageParam || "1", 10), 1);
+
+    const rawPosts = await prisma.post.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: {
+          select: {
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+
+    // read time per post (90 words = 1 min)
+    const posts = rawPosts.map((post) => {
+      const wordCount = post.content?.split(/\s+/).filter(Boolean).length || 0;
+      const readTime = Math.ceil(wordCount / 90);
+
+      return {
+        ...post,
+        readTime,
+      };
+    });
+
+    const totalPosts = await prisma.post.count();
+
+    return c.json({
+      data: posts,
+      pagination: {
+        total: totalPosts,
+        page,
+        limit,
+        totalPages: Math.ceil(totalPosts / limit),
+      },
+    });
+  } catch (err) {
+    c.status(500);
+    return c.json({
+      message: "Something went wrong",
+      error: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
+});
+
+
+
+// //GET route to get any blog by ID
+blogRouter.get('/:id', async (c) => {
+  const id = c.req.param("id");
+
+  const prisma = getPrisma(c.env.PRISMA_DB_URL);
+
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        Tags: true,
+        thumbnail: true,
+        author: {
+          select: {
+            name: true,
+            avatar: true,
+            tagline: true,
+          }
+        }
+      }
+    });
+
+    if (!post) {
+      c.status(404);
+      return c.json({
+        message: "Post not found"
+      });
+    }
+
+    return c.json(post);
+
+  } catch (err) {
+    console.error("Failed to fetch post:", err);
+    c.status(500);
+    return c.json({ message: "Internal Server Error", error: err });
+  }
+});
+
+
+
 //PUT route to make any change in the blog
-blogRouter.put('/', async (c) => {
+blogRouter.put('/:id', async (c) => {
 
     const userId = c.get("userId");
+
+    const id = c.req.param("id");
 
     // connect to prisma client
     // get prisma connection pool url from wrangler.json
@@ -90,94 +193,27 @@ blogRouter.put('/', async (c) => {
 
     const updatePost = await prisma.post.update({
         where: {
-            id: body.id,
+            id: id,
             authorId: userId
         },
         data: {
             title: body.title,
             content: body.content
+        },
+        select: {
+            title: true,
+            id: true
         }
     });
 
     if (!updatePost.id) {
         c.status(400);
         return c.json({
-            message: "Post could not be updated"
+            message: "Post could not be updated",
+            data: updatePost
         })
     }
 
     return c.text("Post updated");
 });
 
-
-// this route has to be above the route fetching post by id, else it will not work
-blogRouter.get("/bulk", async (c) => {
-
-    try {
-        // connect to prisma client
-        // get prisma connection pool url from wrangler.json
-        const prisma = getPrisma(c.env.PRISMA_DB_URL);
-
-        // current page and limit to show posts in a single page
-        const pageParam = c.req.query("page");
-        const limit = 1;
-
-        // parsing to number type
-        const page = parseInt(pageParam || "1")
-
-        // skipping the previous one and taking next posts 
-        const posts = await prisma.post.findMany({
-            skip: (page - 1) * limit,
-            take: limit,
-        });
-
-        // Count total items for metadata
-        const totalPosts = await prisma.post.count();
-
-        // return data
-        return c.json({
-            data: posts,
-            pagination: {
-                total: totalPosts,
-                page,
-                limit,
-                totalPages: Math.ceil(totalPosts / limit),
-            }
-        });
-    } catch (err) {
-        c.status(500);
-        return c.json({ message: "Something went wrong", error: err });
-    }
-
-
-})
-
-
-// //GET route to get any blog by ID
-blogRouter.get('/:id', async (c) => {
-
-    const id = c.req.param("id");
-
-    // connect to prisma client
-    // get prisma connection pool url from wrangler.json
-    const prisma = getPrisma(c.env.PRISMA_DB_URL);
-
-    const getPost = await prisma.post.findUnique({
-        where: {
-            id
-        }
-    })
-
-    if (!getPost) {
-        c.status(404);
-        return c.json({
-            message: "Post not found"
-        });
-    }
-
-    return c.json({
-        message: "Post fetched successfully",
-        title: getPost.title,
-        content: getPost.content
-    })
-});
